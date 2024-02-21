@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.32.0 (765fde254)
+  labels:
+    io.kompose.service: halo
+  name: halo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: halo
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.32.0 (765fde254)
+      labels:
+        io.kompose.network/test-halo-halo-network: "true"
+        io.kompose.service: halo
+    spec:
+      containers:
+        - args:
+            - --spring.r2dbc.url=r2dbc:pool:postgresql://halodb/halo
+            - --spring.r2dbc.username=halo
+            - --spring.r2dbc.password=openpostgresql
+            - --spring.sql.init.platform=postgresql
+            - --halo.external-url=http://localhost:8090/
+          image: halohub/halo:2.12
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:8090/actuator/health/readiness
+            failureThreshold: 5
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+          name: halo
+          ports:
+            - containerPort: 8090
+              hostPort: 8090
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /root/.halo2
+              name: halo-claim0
+      restartPolicy: Always
+      volumes:
+        - name: halo-claim0
+          persistentVolumeClaim:
+            claimName: halo-claim0
