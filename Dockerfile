@@ -1,0 +1,1 @@
+FROM quay.io/sharelatex/sharelatex-pro:latest
